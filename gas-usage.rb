@@ -5,8 +5,14 @@ require 'ethereum.rb'
 require 'terminfo'
 require 'colorize'
 
-@parity = Ethereum::IpcClient.new '/home/user/.local/share/io.parity.ethereum/jsonrpc.ipc', false
-
+begin
+  @ipc = Ethereum::IpcClient.new ARGV[0], false
+  @ipc.web3_client_version
+rescue Errno::ENOENT, Errno::EINVAL
+  printf "Invalid IPC path or none supplied, aborting.\n\n"
+  printf "Usage:\n\truby gas-usage.rb /path/to/jsonrpc.ipc\n\n"
+  exit 137
+end
 def parse_result response
   result = response['result']
 end
@@ -17,13 +23,13 @@ loop do
   height = TermInfo.screen_size.first - 5
   width = TermInfo.screen_size.last - 12
   delay = 15
-  block16 = parse_result @parity.eth_block_number
+  block16 = parse_result @ipc.eth_block_number
   current = block16.to_i 16
   if previous < 0
     previous = current - 16
   end
   while previous <= current
-    block = parse_result @parity.eth_get_block_by_number(previous, false)
+    block = parse_result @ipc.eth_get_block_by_number(previous, false)
     blocks[previous] = {
       number: block["number"].to_i(16),
       gasLimit: block["gasLimit"].to_i(16),
