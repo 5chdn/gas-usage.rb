@@ -5,73 +5,87 @@ require 'ethereum.rb'
 require 'terminfo'
 require 'colorize'
 
-begin
-  @ipc = Ethereum::IpcClient.new ARGV[0], false
-  @ipc.web3_client_version
-rescue Errno::ENOENT, Errno::EINVAL
-  printf "Invalid IPC path or none supplied, aborting.\n\n"
-  printf "Usage:\n\truby gas-usage.rb /path/to/jsonrpc.ipc\n\n"
-  exit 137
+def init
+  begin
+    @ipc = Ethereum::IpcClient.new ARGV[0], false
+    parse_result @ipc.web3_client_version
+    @blocks = {}
+    @previous = -999
+  rescue Errno::ENOENT, Errno::EINVAL
+    printf "Invalid IPC path or none supplied, aborting.\n\n"
+    printf "Usage:\n\truby gas-usage.rb /path/to/jsonrpc.ipc\n\n"
+    exit 137
+  end
 end
+
 def parse_result response
   result = response['result']
 end
 
-blocks = {}
-previous = -999
-loop do
-  height = TermInfo.screen_size.first - 5
-  width = TermInfo.screen_size.last - 12
-  delay = 15
-  block16 = parse_result @ipc.eth_block_number
-  current = block16.to_i 16
-  if previous < 0
-    previous = current - 16
-  end
-  while previous <= current
-    block = parse_result @ipc.eth_get_block_by_number(previous, false)
-    blocks[previous] = {
+def get_blocks current
+  while @previous <= current
+    block = parse_result @ipc.eth_get_block_by_number(@previous, false)
+    @blocks[@previous] = {
       number: block["number"].to_i(16),
       gasLimit: block["gasLimit"].to_i(16),
       gasUsed: block["gasUsed"].to_i(16),
       utilization: (block["gasUsed"].to_i(16).to_f / block["gasLimit"].to_i(16).to_f)
     }
-    previous += 1
+    @previous += 1
   end
-  previous = current
-  system "clear" or system "cls"
-  printf "Ethereum network gas usage visualization\t["
-  printf "###".light_green
-  printf "   ]: low\n"
-  printf "========================================\t["
-  printf "###".light_green
-  printf "##".light_yellow
-  printf " ]: high\n"
-  printf "                                        \t["
-  printf "###".light_green
-  printf "##".light_yellow
-  printf "#".light_red
-  printf "]: full\n\n"
-  blocks.each do | n, b |
+  @previous = current
+end
+
+def render current
+  height = TermInfo.screen_size.first - 5
+  width = TermInfo.screen_size.last - 12
+  out = "Ethereum network gas usage visualization\t["
+  out += "###".light_green
+  out += "   ]: low\n"
+  out += "========================================\t["
+  out += "###".light_green
+  out += "##".light_yellow
+  out += " ]: high\n"
+  out += "                                        \t["
+  out += "###".light_green
+  out += "##".light_yellow
+  out += "#".light_red
+  out += "]: full\n\n"
+  @blocks.each do | n, b |
     if n > current - height
       num = n.to_s
       util = b[:utilization] * width.to_f
-      printf "#{num}: ["
+      out += "#{num}: ["
       for i in 0..width
         if i <= util.round
           if i < width * 0.50
-            printf "#".light_green
+            out += "#".light_green
           elsif i < width * 0.90
-            printf "#".light_yellow
+            out += "#".light_yellow
           else
-            printf "#".light_red
+            out += "#".light_red
           end
         else
-          printf " ".light_black
+          out += " ".light_black
         end
       end
-      printf "]\n"
+      out += "]\n"
     end
   end
-  sleep delay
+  out
+end
+
+init
+
+loop do
+  current = parse_result @ipc.eth_block_number
+  current = current.to_i 16
+  if @previous < 0
+    @previous = current - 16
+  end
+  get_blocks current
+  system "clear" or system "cls"
+  vis = render(current)
+  printf vis
+  sleep 15.9
 end
