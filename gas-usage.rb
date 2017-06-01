@@ -34,7 +34,7 @@ loop do
   end
   previous = current
   system "clear" or system "cls"
-  printf "Ethereum networt gas usage visualization\t["
+  printf "Ethereum network gas usage visualization\t["
   printf "###".light_green
   printf "   ]: low\n"
   printf "========================================\t["
