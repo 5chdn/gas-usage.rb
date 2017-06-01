@@ -8,7 +8,7 @@ monitor ethereum network gas usage on the command line with ruby
     
 ### Run
 
-    ruby gas-usage.rb
+    ruby gas-usage.rb /path/to/jsonrpc.ipc
     
 ### Vis
 
