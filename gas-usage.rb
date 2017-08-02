@@ -10,7 +10,7 @@ def init
     @ipc = Ethereum::IpcClient.new ARGV[0], false
     parse_result @ipc.web3_client_version
     @blocks = {}
-    @previous = -999
+    @previous = -1
   rescue Errno::ENOENT, Errno::EINVAL
     printf "Invalid IPC path or none supplied, aborting.\n\n"
     printf "Usage:\n\truby gas-usage.rb /path/to/jsonrpc.ipc\n\n"
