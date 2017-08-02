@@ -1,15 +1,15 @@
 # gas-usage.rb
-monitor ethereum network gas usage on the command line with ruby
 
+monitor ethereum network gas usage on the command line with ruby
 
 ### Dep
 
     gem install ethereum.rb ruby-terminfo colorize
-    
+
 ### Run
 
     ruby gas-usage.rb /path/to/jsonrpc.ipc
-    
+
 ### Vis
 
 ![gas usage screenshot in terminology](gas-usage.png)
